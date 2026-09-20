@@ -1,4 +1,4 @@
-from instruments import *
+from instruments import add_instrument, find_instrument
 
 
 def show_instruments(instruments):
@@ -33,8 +33,6 @@ def main():
         if case == '2':
             instrument_name = input('Введите название инструмента: ')
             print(find_instrument(instruments, instrument_name))
-
-
 
 
 if __name__ == "__main__":

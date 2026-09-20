@@ -22,3 +22,23 @@
 - разработка API;
 - контейнеризация приложения;
 - настройка CI/CD.
+## Структура проекта
+- main.py – точка запуска;
+- instruments.py – работа с инструментами;
+- bookings.py – работа с бронированиями;
+- storage.py – сохранение и загрузка данных;
+- data/ – JSON-файлы данных;
+- tests/ – автоматизированные тесты.
+## Требования
+- Python 3.x;
+- pytest;
+- flake8.
+Установка зависимостей:
+pip install -r requirements.txt
+## Запуск программы
+python main.py
+## Запуск тестов
+python -m pytest tests/test_instruments.py
+python -m pytest tests/test_bookings.py
+## Проверка качества кода
+flake8 --exclude .venv
