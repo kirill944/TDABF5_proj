@@ -1,23 +1,41 @@
-import math
+from instruments import *
 
 
-instrument_name = "Скрипка"
-cost = 15999.99
-is_booked = True
+def show_instruments(instruments):
+    """Вывести список помещений.
+    TODO: перебрать список instruments и вывести помещения
+    в виде таблицы.
+    """
+    pass
 
-def add_instrument(instrument_name, price):
-    return f"Инструмент {instrument_name} добавлен по цене {price}"
 
-def change_price(instrument_name, new_price):
-    return f"Цена {instrument_name} изменена на {new_price}"
+def show_bookings(bookings):
+    """Вывести список бронирований.
+    TODO: перебрать словарь bookings и вывести бронирования
+    с указанием инструментов.
+    """
+    pass
 
-def change_booking_status(instrument_name, is_booked):
-    if is_booked:
-        is_booked = False
-        return f"Инструмент {instrument_name} готов к покупке"
-    is_booked = True
-    return f"Инструмент {instrument_name} забронирован для покупки"
 
-print(f"Инструмент: {instrument_name}")
-print(f"Стоимость: {cost} рублей (Наличными: {math.floor(cost)})")
-print(change_booking_status(instrument_name, is_booked))
+def main():
+    instruments = []
+    while True:
+        print('1. Добавить инструмент')
+        print('2. Найти инструмент')
+        print('0. Выход')
+        case = input()
+        if case == '0':
+            break
+        if case == '1':
+            instrument_name = input('Введите название инструмента: ')
+            price = int(input('Введите цену инструмента: '))
+            instruments = add_instrument(instruments, instrument_name, price)
+        if case == '2':
+            instrument_name = input('Введите название инструмента: ')
+            print(find_instrument(instruments, instrument_name))
+
+
+
+
+if __name__ == "__main__":
+    main()
