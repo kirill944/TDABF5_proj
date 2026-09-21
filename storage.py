@@ -1,30 +1,12 @@
-def load_rooms(filename):
-    """Загрузить помещения из JSON-файла.
-    TODO: открыть файл через контекстный менеджер with,
-    прочитать данные и вернуть список помещений.
-    Обработать отсутствие файла и некорректный JSON.
-    """
-    pass
+import json
 
 
-def save_rooms(filename, rooms):
-    """Сохранить помещения в JSON-файл.
-    TODO: записать список помещений в файл
-    с использованием контекстного менеджера with.
-    """
-    pass
+def load_instruments(filename):
+    with open(filename, 'r', encoding='UTF-8') as file:
+        instruments = json.load(file)
+    return instruments
 
 
-def load_bookings(filename):
-    """Загрузить бронирования из JSON-файла.
-    TODO: аналогично load_rooms() – прочитать
-    и вернуть список бронирований.
-    """
-    pass
-
-
-def save_bookings(filename, bookings):
-    """Сохранить бронирования в JSON-файл.
-    TODO: записать список бронирований в файл.
-    """
-    pass
+def save_instruments(filename, instruments):
+    with open(filename, 'r', encoding='UTF-8') as file:
+        json.dump(instruments, file, ensure_ascii=False, indent=4)

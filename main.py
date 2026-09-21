@@ -28,8 +28,11 @@ def main():
             break
         if case == '1':
             instrument_name = input('Введите название инструмента: ')
-            price = int(input('Введите цену инструмента: '))
-            instruments = add_instrument(instruments, instrument_name, price)
+            try:
+                price = int(input('Введите цену инструмента: '))
+                instruments = add_instrument(instruments, instrument_name, price)
+            except ValueError:
+                print('Введенв неверные данные')
         if case == '2':
             instrument_name = input('Введите название инструмента: ')
             print(find_instrument(instruments, instrument_name))
