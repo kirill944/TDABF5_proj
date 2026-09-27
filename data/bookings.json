@@ -1,3 +1,9 @@
-{
-  "1": "Гитара"
-}
+[
+    {
+        "id": 1,
+        "instrument_id": 2,
+        "user_id": 1,
+        "booking_date": "2026-09-15",
+        "is_cancelled": false
+    }
+]

@@ -1,10 +1,12 @@
 [
-  {
-    "instrument_name": "Скрипка",
-    "price": 30000
-  },
-  {
-    "instrument_name": "Гитара",
-    "price": 8000
-  }
+    {
+        "id": 1,
+        "name": "Скрипка",
+        "price": 30000
+    },
+    {
+        "id": 2,
+        "name": "Гитара",
+        "price": 8000
+    }
 ]
