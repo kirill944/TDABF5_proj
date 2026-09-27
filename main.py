@@ -30,7 +30,8 @@ def main():
             instrument_name = input('Введите название инструмента: ')
             try:
                 price = int(input('Введите цену инструмента: '))
-                instruments = add_instrument(instruments, instrument_name, price)
+                instruments = add_instrument(instruments,
+                                             instrument_name, price)
             except ValueError:
                 print('Введенв неверные данные')
         if case == '2':
