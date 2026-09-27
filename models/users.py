@@ -53,8 +53,7 @@ def find_user(
     query_lower = query.lower()
     return [
         user for user in users
-        if query_lower in user.name.lower()
-           or query_lower in user.email.lower()
+        if query_lower in user.name.lower() or query_lower in user.email.lower()
     ]
 
 

@@ -36,9 +36,9 @@ BOOKINGS_FILE = 'data/bookings.json'
 
 
 def create_new_booking(
-    bookings: List[Booking],
-    instruments: List[Instrument],
-    users: List[User],
+        bookings: List[Booking],
+        instruments: List[Instrument],
+        users: List[User],
 ) -> None:
     """Создать новое бронирование через пользовательский сценарий."""
     instrument_id = input_int('Введите ID инструмента: ')

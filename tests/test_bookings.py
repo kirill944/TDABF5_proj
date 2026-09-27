@@ -48,7 +48,8 @@ def test_booking_str_cancelled():
 
 def test_is_instrument_available_true():
     bookings = []
-    assert is_instrument_available(bookings, _make_room(), '2026-09-15') is True
+    assert is_instrument_available(bookings, _make_room(),
+                                   '2026-09-15') is True
 
 
 def test_is_instrument_available_false():

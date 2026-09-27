@@ -44,9 +44,9 @@ def save_users(filename: str, users: List[User]) -> None:
 
 
 def load_bookings(
-    filename: str,
-    instruments: List[Instrument],
-    users: List[User],
+        filename: str,
+        instruments: List[Instrument],
+        users: List[User],
 ) -> List[Booking]:
     """Загрузить бронирования, восстановив связи с объектами."""
     with open(filename, 'r', encoding='UTF-8') as file:
