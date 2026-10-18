@@ -104,3 +104,13 @@ def _generate_booking_id(bookings: List[Booking]) -> int:
     if not bookings:
         return 1
     return max(b.id for b in bookings) + 1
+
+def find_booking_by_id(
+        bookings: List[Booking],
+        booking_id: int,
+) -> Optional[Booking]:
+    """Найти бронирование по идентификатору."""
+    for booking in bookings:
+        if booking.id == booking_id:
+            return booking
+    return None
