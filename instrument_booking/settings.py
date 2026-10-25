@@ -57,7 +57,7 @@ ROOT_URLCONF = 'instrument_booking.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'], # <--- ДОБАВИТЬ ЭТУ СТРОКУ
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

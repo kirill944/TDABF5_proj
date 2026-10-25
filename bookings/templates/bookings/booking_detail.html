@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if booking %}Бронирование №{{ booking.id }}{% else %}Не найдено{% endif %} — Instrument Booking
+{% endblock %}
+
+{% block content %}
+{% if booking %}
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title">Бронирование №{{ booking.id }}</h2>
+            <p class="card-text"><strong>Инструмент:</strong> {{ booking.instrument.name }}</p>
+            <p class="card-text"><strong>Дата:</strong> {{ booking.booking_date }}</p>
+            <p class="card-text"><strong>Пользователь:</strong> {{ booking.user.name }} ({{ booking.user.email }})</p>
+            <p class="card-text">
+                <strong>Статус:</strong>
+                {% include "bookings/includes/booking_status.html" %}
+            </p>
+            <a href="{% url 'bookings:bookings' %}" class="btn btn-outline-secondary mt-3">← Назад к списку</a>
+        </div>
+    </div>
+{% else %}
+    <h1 class="text-danger">Бронирование не найдено</h1>
+    <p>Бронирование с указанным ID отсутствует.</p>
+    <a href="{% url 'bookings:bookings' %}" class="btn btn-outline-secondary mt-3">← Назад к списку</a>
+{% endif %}
+{% endblock %}

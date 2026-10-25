@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if instrument %}{{ instrument.name }}{% else %}Не найдено{% endif %} — Instrument Booking
+{% endblock %}
+
+{% block content %}
+{% if instrument %}
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title">{{ instrument.name }}</h2>
+            <p class="card-text"><strong>ID:</strong> {{ instrument.id }}</p>
+            <p class="card-text"><strong>Цена:</strong> {{ instrument.price }} руб.</p>
+            <p class="card-text">
+                <strong>Статус:</strong>
+                {% if is_available %}
+                    <span class="badge bg-success">Свободен</span>
+                {% else %}
+                    <span class="badge bg-danger">Занят (есть активные брони)</span>
+                {% endif %}
+            </p>
+            <a href="{% url 'instruments:instruments' %}" class="btn btn-outline-secondary mt-3">← Назад к списку</a>
+        </div>
+    </div>
+{% else %}
+    <h1 class="text-danger">Инструмент не найден</h1>
+    <p>Инструмент с указанным ID отсутствует.</p>
+    <a href="{% url 'instruments:instruments' %}" class="btn btn-outline-secondary mt-3">← Назад к списку</a>
+{% endif %}
+{% endblock %}

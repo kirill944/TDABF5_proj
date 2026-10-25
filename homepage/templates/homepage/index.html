@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Главная — Instrument Booking{% endblock %}
+
+{% block content %}
+<h1 class="display-4">Instrument Booking</h1>
+<p class="lead">Система бронирования музыкальных инструментов.</p>
+<hr>
+<p>Основные разделы:</p>
+<a href="{% url 'instruments:instruments' %}" class="btn btn-primary me-2">Инструменты</a>
+<a href="{% url 'bookings:bookings' %}" class="btn btn-secondary">Бронирования</a>
+{% endblock %}

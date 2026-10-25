@@ -1,0 +1,10 @@
+{% load static %}
+<nav class="nav mb-4 align-items-center">
+    <a class="navbar-brand me-4" href="{% url 'homepage:index' %}">
+        <img src="{% static 'homepage/img/logo.jpg' %}" alt="Logo" height="30">
+        Instrument Booking
+    </a>
+    <a class="nav-link" href="{% url 'homepage:index' %}">Главная</a>
+    <a class="nav-link" href="{% url 'instruments:instruments' %}">Инструменты</a>
+    <a class="nav-link" href="{% url 'bookings:bookings' %}">Бронирования</a>
+</nav>

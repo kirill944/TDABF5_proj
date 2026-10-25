@@ -1,0 +1,9 @@
+<div class="col-md-4 mb-3">
+    <div class="card instrument-card h-100">
+        <div class="card-body">
+            <h5 class="card-title">{{ ins.name|default:"Без названия" }}</h5>
+            <p class="card-text">Цена: {{ ins.price }} руб.</p>
+            <a href="{% url 'instruments:instrument_detail' ins.id %}" class="btn btn-outline-primary">Подробнее</a>
+        </div>
+    </div>
+</div>
