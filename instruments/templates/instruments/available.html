@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Поиск свободных инструментов</h1>
+
+<form method="get" class="mb-4">
+    <label for="date" class="form-label">Выберите дату:</label>
+    <input type="date" id="date" name="date" class="form-control mb-2" value="{{ booking_date }}">
+    <button type="submit" class="btn btn-primary">Найти</button>
+</form>
+
+{% if booking_date %}
+    <h2>Свободные инструменты на {{ booking_date }}:</h2>
+    <div class="row">
+        {% for ins in instruments %}
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ ins.name }}</h5>
+                        <p class="card-text">Цена: {{ ins.price }} руб.</p>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-danger">На выбранную дату свободных инструментов нет.</p>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

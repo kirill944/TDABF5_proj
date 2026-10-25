@@ -1,29 +1,65 @@
+import sqlite3
 from django.shortcuts import render
-from models.bookings import find_booking_by_id
-from storage import load_bookings, load_instruments, load_users
 
-INSTRUMENTS_FILE = "data/instruments.json"
-USERS_FILE = "data/users.json"
-BOOKINGS_FILE = "data/bookings.json"
+DB_PATH = "data/instrument_booking.sqlite"
 
 
 def bookings(request):
-    instruments_list = load_instruments(INSTRUMENTS_FILE)
-    users_list = load_users(USERS_FILE)
-    bookings_list = load_bookings(BOOKINGS_FILE, instruments_list, users_list)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
 
-    context = {"bookings": bookings_list}
-    return render(request, "bookings/booking_list.html", context)
+    # JOIN запрос для получения полной информации
+    bookings_data = conn.execute("""
+                                 SELECT b.id, b.booking_date, i.name AS instrument_name, u.name AS user_name
+                                 FROM bookings b
+                                          JOIN instruments i ON b.instrument_id = i.id
+                                          JOIN users u ON b.user_id = u.id
+                                 WHERE b.is_cancelled = 0
+                                 ORDER BY b.booking_date;
+                                 """).fetchall()
+    conn.close()
+    return render(request, "bookings/booking_list.html", {"bookings": bookings_data})
 
 
-def booking_detail(request, booking_id: int):
-    instruments_list = load_instruments(INSTRUMENTS_FILE)
-    users_list = load_users(USERS_FILE)
-    bookings_list = load_bookings(BOOKINGS_FILE, instruments_list, users_list)
+def statistics(request):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
 
-    booking = find_booking_by_id(bookings_list, booking_id)
-    context = {"booking": booking}
+    # GROUP BY запрос
+    stats = conn.execute("""
+                         SELECT i.name AS instrument_name, COUNT(b.id) AS bookings_count
+                         FROM instruments i
+                                  LEFT JOIN bookings b ON i.id = b.instrument_id AND b.is_cancelled = 0
+                         GROUP BY i.id, i.name
+                         ORDER BY bookings_count DESC;
+                         """).fetchall()
+    conn.close()
+    return render(request, "bookings/statistics.html", {"statistics": stats})
 
+
+def booking_detail(request, booking_id):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+
+    # Используем JOIN, чтобы получить имена инструмента и пользователя
+    booking = conn.execute("""
+                           SELECT b.id,
+                                  b.booking_date,
+                                  b.is_cancelled,
+                                  i.name AS instrument_name,
+                                  u.name AS user_name
+                           FROM bookings b
+                                    JOIN instruments i ON b.instrument_id = i.id
+                                    JOIN users u ON b.user_id = u.id
+                           WHERE b.id = ?
+                           """, (booking_id,)).fetchone()
+    conn.close()
+
+    context = {
+        "booking": booking
+    }
+
+    # Если бронирование не найдено, возвращаем статус 404
     return render(
         request,
         "bookings/booking_detail.html",

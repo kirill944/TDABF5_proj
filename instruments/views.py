@@ -1,37 +1,59 @@
+import sqlite3
 from django.shortcuts import render
-from models.instruments import find_instrument_by_id
-from storage import load_bookings, load_instruments, load_users
 
-INSTRUMENTS_FILE = "data/instruments.json"
-USERS_FILE = "data/users.json"
-BOOKINGS_FILE = "data/bookings.json"
+DB_PATH = "data/instrument_booking.sqlite"
 
 
 def instruments(request):
-    instruments_list = load_instruments(INSTRUMENTS_FILE)
-    context = {"instruments": instruments_list}
-    return render(request, "instruments/instrument_list.html", context)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    instruments_list = conn.execute("SELECT id, name, price FROM instruments ORDER BY name").fetchall()
+    conn.close()
+    return render(request, "instruments/instrument_list.html", {"instruments": instruments_list})
 
 
 def instrument_detail(request, instrument_id: int):
-    instruments_list = load_instruments(INSTRUMENTS_FILE)
-    instrument = find_instrument_by_id(instruments_list, instrument_id)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+
+    # Получаем инструмент
+    instrument = conn.execute("SELECT * FROM instruments WHERE id = ?", (instrument_id,)).fetchone()
 
     if instrument:
-        users_list = load_users(USERS_FILE)
-        bookings_list = load_bookings(BOOKINGS_FILE, instruments_list, users_list)
-        active = [b for b in bookings_list if b.instrument.id == instrument.id and not b.is_cancelled]
-        is_available = not active
+        # Проверяем, есть ли активные бронирования
+        active = conn.execute(
+            "SELECT COUNT(*) as count FROM bookings WHERE instrument_id = ? AND is_cancelled = 0",
+            (instrument_id,)
+        ).fetchone()
+        is_available = active['count'] == 0
     else:
         is_available = False
 
-    context = {
-        "instrument": instrument,
-        "is_available": is_available,
-    }
+    conn.close()
+    context = {"instrument": instrument, "is_available": is_available}
+    return render(request, "instruments/instrument_detail.html", context, status=404 if instrument is None else 200)
+
+def available_instruments(request):
+    booking_date = request.GET.get("date")
+    instruments_list = []
+
+    if booking_date:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        # Параметризованный запрос (передаем дату через ?)
+        instruments_list = conn.execute("""
+                                        SELECT id, name, price
+                                        FROM instruments
+                                        WHERE id NOT IN (SELECT instrument_id
+                                                         FROM bookings
+                                                         WHERE booking_date = ?
+                                                           AND is_cancelled = 0)
+                                        ORDER BY name;
+                                        """, (booking_date,)).fetchall()
+        conn.close()
+
     return render(
         request,
-        "instruments/instrument_detail.html",
-        context,
-        status=404 if instrument is None else 200
+        "instruments/available.html",
+        {"instruments": instruments_list, "booking_date": booking_date}
     )

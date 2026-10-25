@@ -8,20 +8,23 @@
 {% if booking %}
     <div class="card">
         <div class="card-body">
-            <h2 class="card-title">Бронирование №{{ booking.id }}</h2>
-            <p class="card-text"><strong>Инструмент:</strong> {{ booking.instrument.name }}</p>
+            <h1 class="card-title">Бронирование №{{ booking.id }}</h1>
+            <p class="card-text"><strong>Инструмент:</strong> {{ booking.instrument_name }}</p>
+            <p class="card-text"><strong>Пользователь:</strong> {{ booking.user_name }}</p>
             <p class="card-text"><strong>Дата:</strong> {{ booking.booking_date }}</p>
-            <p class="card-text"><strong>Пользователь:</strong> {{ booking.user.name }} ({{ booking.user.email }})</p>
             <p class="card-text">
                 <strong>Статус:</strong>
-                {% include "bookings/includes/booking_status.html" %}
+                {% if booking.is_cancelled %}
+                    <span class="badge bg-danger">Отменено</span>
+                {% else %}
+                    <span class="badge bg-success">Активно</span>
+                {% endif %}
             </p>
-            <a href="{% url 'bookings:bookings' %}" class="btn btn-outline-secondary mt-3">← Назад к списку</a>
         </div>
     </div>
 {% else %}
     <h1 class="text-danger">Бронирование не найдено</h1>
     <p>Бронирование с указанным ID отсутствует.</p>
-    <a href="{% url 'bookings:bookings' %}" class="btn btn-outline-secondary mt-3">← Назад к списку</a>
 {% endif %}
+<a href="{% url 'bookings:bookings' %}" class="btn btn-outline-secondary mt-3">← Назад к списку</a>
 {% endblock %}
