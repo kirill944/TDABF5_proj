@@ -1,9 +1,8 @@
 # Instrument Booking
 
 Веб-приложение на Django для бронирования музыкальных инструментов.
-Проект переведён с ручных SQL-запросов (ПР7, `sqlite3`) на **Django ORM** (ПР9):
-модели, миграции, связи `ForeignKey`, `select_related`, `annotate`/`aggregate`,
-поиск, фильтрация, сортировка и пагинация.
+Проект переведён с ручных SQL-запросов (ПР7, `sqlite3`) на **Django ORM** (ПР9).
+В ПР10 настроена **административная панель**, добавлена расширенная фильтрация, внедрена оптимизация запросов (устранена проблема N+1) и написаны автоматизированные тесты.
 
 ---
 
@@ -12,6 +11,7 @@
 - Python 3.10+
 - Django 5.2.19
 - SQLite (через Django ORM)
+- django-debug-toolbar (для анализа SQL-запросов)
 
 ---
 
@@ -60,7 +60,7 @@ python manage.py migrate
 После этого создаётся `db.sqlite3` с таблицами:
 `instruments_instrument`, `bookings_user`, `bookings_booking` и служебными таблицами Django.
 
-### 4. (Опционально) Создать суперпользователя для админки
+### 4. Создать суперпользователя для админки
 
 ```bash
 python manage.py createsuperuser
@@ -83,12 +83,12 @@ python manage.py runserver
 | URL | Описание | ORM-приёмы |
 |---|---|---|
 | `/` | Главная | — |
-| `/instruments/` | Список инструментов + поиск (`?q=`, `?max_price=`) | `all()`, `filter(name__icontains=...)`, `filter(price__lte=...)`, `values()` |
+| `/instruments/` | Список инструментов + поиск (`?q=`, `?max_price=`) | `all()`, `filter(name__icontains=...)`, `filter(price__lte=...)` |
 | `/instruments/<id>/` | Детали инструмента, признак доступности | `filter(id=...).first()`, `instrument.bookings.filter(is_cancelled=False)` |
-| `/instruments/available/?date=YYYY-MM-DD` | Свободные инструменты на дату | `exclude(bookings__booking_date=..., bookings__is_cancelled=False)`, `order_by("name")` |
-| `/bookings/` | Список активных бронирований + пагинация | `select_related("instrument", "user")`, `filter(is_cancelled=False)`, `order_by("booking_date")`, `Paginator` |
-| `/bookings/statistics/` | Статистика по инструментам и сводные показатели | `values("instrument__name").annotate(Count(...))`, `aggregate(Count, Avg, Sum, Min, Max)`, `filter(is_cancelled=False, booking_date__gte=...)` |
-| `/bookings/<id>/` | Детали бронирования | `select_related("instrument", "user")`, `filter(id=...).first()` |
+| `/instruments/available/?date=YYYY-MM-DD` | Свободные инструменты на дату | `exclude(bookings__booking_date=..., bookings__is_cancelled=False)` |
+| `/bookings/` | Список активных бронирований + фильтры + пагинация | `select_related()`, `filter(is_cancelled=False)`, `Q()`, `Paginator` |
+| `/bookings/statistics/` | Статистика | `values().annotate(Count)`, `aggregate()` |
+| `/bookings/<id>/` | Детали бронирования | `select_related()`, `filter(id=...).first()` |
 
 Несуществующий инструмент/бронирование → кастомная страница «Не найдено» со статусом **404**.
 Несуществующий URL → общий `404.html`.
@@ -136,3 +136,33 @@ python manage.py runserver
 - `INSTALLED_APPS` содержит `django.contrib.staticfiles`, `homepage`, `instruments`, `bookings`.
 - `TEMPLATES["DIRS"]` содержит `BASE_DIR / "templates"`.
 - `STATIC_URL = "static/"`.
+
+## Административная панель и ORM (ПР10)
+
+### Django Admin
+В ПР10 была проведена полная настройка административной панели:
+- **Локализация:** Установлен `LANGUAGE_CODE = 'ru-ru'`, заданы `verbose_name` для приложений (`apps.py`), моделей и полей. В админке всё отображается на русском языке.
+- **Списки объектов:** Для `Instrument` и `User` настроены кастомные методы, выводящие количество активных броней. Для `Booking` настроен `list_display`, `date_hierarchy` и фильтры по статусу, дате и инструменту.
+- **Связанные объекты (Inline):** В карточках Пользователей и Инструментов добавлены встроенные формы (`TabularInline`), позволяющие просматривать и редактировать их бронирования напрямую.
+- **Поиск и автодополнение:** Для бронирований настроен `autocomplete_fields` для быстрого выбора инструмента и пользователя.
+
+### Работа с Django ORM и фильтрация
+- **Фильтрация по нескольким условиям:** В списке бронирований (`/bookings/`) реализована фильтрация по пользователю, инструменту и точной дате. Для формирования комплексных условий используется объект `Q()`.
+- **Сохранение фильтров при пагинации:** В шаблоне `booking_list.html` реализован сбор GET-параметров, благодаря чему при переходе по страницам (`?page=2`) выбранные фильтры не сбрасываются.
+- **Доступность инструментов:** При проверке доступности на конкретную дату учитываются только активные бронирования (`is_cancelled=False`). Отмененные брони не блокируют инструмент.
+
+### Оптимизация запросов (Решение проблемы N+1)
+В ПР10 проведен анализ SQL-запросов с помощью **Django Debug Toolbar**. 
+Для устранения проблемы N+1 (когда для каждой записи списка выполняется отдельный запрос к связанной таблице) были применены:
+- `select_related("instrument", "user")` в представлениях.
+- `list_select_related = ("instrument", "user")` в `BookingAdmin`.
+Теперь при выводе списка бронирований Django выполняет один SQL-запрос с `INNER JOIN`, а не N+1 запросов.
+
+
+## Тестирование
+
+В корне проекта создана папка `tests/` (тесты отделены от приложений). Написаны тесты для проверки бизнес-логики (доступность, поиск, 404) и пагинации.
+
+Запуск тестов:
+```bash
+python manage.py test tests
