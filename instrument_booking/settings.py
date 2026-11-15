@@ -40,9 +40,11 @@ INSTALLED_APPS = [
     "homepage",
     "instruments",
     "bookings",
+    "debug_toolbar",          # ← ПР10
 ]
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',   # ← ПР10, в начало
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -105,7 +107,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-ru'
 
 TIME_ZONE = 'Europe/Moscow'
 
@@ -113,6 +115,8 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Debug Toolbar
+INTERNAL_IPS = ["127.0.0.1", "localhost"]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

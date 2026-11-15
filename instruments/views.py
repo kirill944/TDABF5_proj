@@ -4,7 +4,6 @@ from .models import Instrument
 
 def instruments(request):
     instruments_list = Instrument.objects.all()
-
     query = request.GET.get("q")
     if query:
         instruments_list = instruments_list.filter(name__icontains=query)
@@ -16,7 +15,11 @@ def instruments(request):
     return render(
         request,
         "instruments/instrument_list.html",
-        {"instruments": instruments_list, "query": query or ""},
+        {
+            "instruments": instruments_list,
+            "query": query or "",
+            "max_price": max_price or "",
+        },
     )
 
 

@@ -6,7 +6,7 @@
 <h1>Инструменты</h1>
 <form method="get" class="mb-3">
     <input type="text" name="q" value="{{ query }}" placeholder="Поиск по названию">
-    <input type="number" name="max_price" placeholder="Макс. цена">
+    <input type="number" name="max_price" value="{{ max_price }}" placeholder="Макс. цена">
     <button type="submit" class="btn btn-primary">Найти</button>
 </form>
 <p>Всего инструментов: {{ instruments|length }}</p>

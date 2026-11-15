@@ -1,37 +1,62 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.db.models import Count, Q, Avg, Sum, Min, Max
 from django.core.paginator import Paginator
-from .models import Booking
+
+from .models import Booking, User
+from instruments.models import Instrument
 
 
 def bookings(request):
-    # select_related — оптимизация запросов (JOIN)
-    bookings_qs = (
-        Booking.objects
-        .select_related("instrument", "user")
-        .filter(is_cancelled=False)                      # фильтрация по одному условию
-        .order_by("booking_date")                        # сортировка по одному полю
-    )
+    bookings_qs = Booking.objects.select_related("instrument", "user").filter(is_cancelled=False)
+
+    # Собираем условия в объект Q
+    query = Q()
+
+    instrument_id = request.GET.get("instrument")
+    if instrument_id and instrument_id.isdigit():
+        query &= Q(instrument_id=int(instrument_id))
+
+    user_id = request.GET.get("user")
+    if user_id and user_id.isdigit():
+        query &= Q(user_id=int(user_id))
+
+    booking_date = request.GET.get("date")
+    if booking_date:
+        query &= Q(booking_date=booking_date)
+
+    # Применяем все собранные условия за один раз
+    if query:
+        bookings_qs = bookings_qs.filter(query)
+
+    # Сортировка
+    bookings_qs = bookings_qs.order_by("booking_date")
 
     # Пагинация
     paginator = Paginator(bookings_qs, per_page=10)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get("page"))
 
     return render(
         request,
         "bookings/booking_list.html",
-        {"bookings": page_obj, "page_obj": page_obj},
+        {
+            "bookings": page_obj,
+            "page_obj": page_obj,
+            "instruments": Instrument.objects.order_by("name"),
+            "users": User.objects.order_by("name"),
+            "selected_instrument": instrument_id or "",
+            "selected_user": user_id or "",
+            "selected_date": booking_date or "",  # <-- изменили название переменной
+        },
     )
 
 
 def statistics(request):
-    # annotate + Count — группировка (уже было)
+    # ... без изменений, как у вас было ...
     stats = (
         Booking.objects
         .values("instrument__name")
         .annotate(bookings_count=Count("id", filter=Q(is_cancelled=False)))
-        .order_by("-bookings_count")                     # сортировка по вычисляемому полю
+        .order_by("-bookings_count")
     )
 
     statistics_list = [
@@ -40,17 +65,15 @@ def statistics(request):
         for row in stats
     ]
 
-    # aggregate — сводные показатели (расширено Min/Max)
     totals = Booking.objects.aggregate(
         total_bookings=Count("id"),
         active_bookings=Count("id", filter=Q(is_cancelled=False)),
         avg_instrument_price=Avg("instrument__price"),
         total_revenue=Sum("instrument__price", filter=Q(is_cancelled=False)),
-        first_booking=Min("booking_date"),               # НОВОЕ: Min
-        last_booking=Max("booking_date"),                # НОВОЕ: Max
+        first_booking=Min("booking_date"),
+        last_booking=Max("booking_date"),
     )
 
-    # НОВОЕ: фильтрация по нескольким условиям в одном filter()
     active_future = Booking.objects.filter(
         is_cancelled=False,
         booking_date__gte="2026-01-01",
