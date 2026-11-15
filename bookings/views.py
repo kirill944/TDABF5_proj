@@ -1,68 +1,90 @@
-import sqlite3
-from django.shortcuts import render
-
-DB_PATH = "data/instrument_booking.sqlite"
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Count, Q, Avg, Sum, Min, Max
+from django.core.paginator import Paginator
+from .models import Booking
 
 
 def bookings(request):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    # select_related — оптимизация запросов (JOIN)
+    bookings_qs = (
+        Booking.objects
+        .select_related("instrument", "user")
+        .filter(is_cancelled=False)                      # фильтрация по одному условию
+        .order_by("booking_date")                        # сортировка по одному полю
+    )
 
-    # JOIN запрос для получения полной информации
-    bookings_data = conn.execute("""
-                                 SELECT b.id, b.booking_date, i.name AS instrument_name, u.name AS user_name
-                                 FROM bookings b
-                                          JOIN instruments i ON b.instrument_id = i.id
-                                          JOIN users u ON b.user_id = u.id
-                                 WHERE b.is_cancelled = 0
-                                 ORDER BY b.booking_date;
-                                 """).fetchall()
-    conn.close()
-    return render(request, "bookings/booking_list.html", {"bookings": bookings_data})
+    # Пагинация
+    paginator = Paginator(bookings_qs, per_page=10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(
+        request,
+        "bookings/booking_list.html",
+        {"bookings": page_obj, "page_obj": page_obj},
+    )
 
 
 def statistics(request):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    # annotate + Count — группировка (уже было)
+    stats = (
+        Booking.objects
+        .values("instrument__name")
+        .annotate(bookings_count=Count("id", filter=Q(is_cancelled=False)))
+        .order_by("-bookings_count")                     # сортировка по вычисляемому полю
+    )
 
-    # GROUP BY запрос
-    stats = conn.execute("""
-                         SELECT i.name AS instrument_name, COUNT(b.id) AS bookings_count
-                         FROM instruments i
-                                  LEFT JOIN bookings b ON i.id = b.instrument_id AND b.is_cancelled = 0
-                         GROUP BY i.id, i.name
-                         ORDER BY bookings_count DESC;
-                         """).fetchall()
-    conn.close()
-    return render(request, "bookings/statistics.html", {"statistics": stats})
+    statistics_list = [
+        {"instrument_name": row["instrument__name"],
+         "bookings_count": row["bookings_count"]}
+        for row in stats
+    ]
+
+    # aggregate — сводные показатели (расширено Min/Max)
+    totals = Booking.objects.aggregate(
+        total_bookings=Count("id"),
+        active_bookings=Count("id", filter=Q(is_cancelled=False)),
+        avg_instrument_price=Avg("instrument__price"),
+        total_revenue=Sum("instrument__price", filter=Q(is_cancelled=False)),
+        first_booking=Min("booking_date"),               # НОВОЕ: Min
+        last_booking=Max("booking_date"),                # НОВОЕ: Max
+    )
+
+    # НОВОЕ: фильтрация по нескольким условиям в одном filter()
+    active_future = Booking.objects.filter(
+        is_cancelled=False,
+        booking_date__gte="2026-01-01",
+    ).count()
+
+    return render(
+        request,
+        "bookings/statistics.html",
+        {
+            "statistics": statistics_list,
+            "totals": totals,
+            "active_future": active_future,
+        },
+    )
 
 
 def booking_detail(request, booking_id):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    booking = (
+        Booking.objects
+        .select_related("instrument", "user")
+        .filter(id=booking_id)
+        .first()
+    )
 
-    # Используем JOIN, чтобы получить имена инструмента и пользователя
-    booking = conn.execute("""
-                           SELECT b.id,
-                                  b.booking_date,
-                                  b.is_cancelled,
-                                  i.name AS instrument_name,
-                                  u.name AS user_name
-                           FROM bookings b
-                                    JOIN instruments i ON b.instrument_id = i.id
-                                    JOIN users u ON b.user_id = u.id
-                           WHERE b.id = ?
-                           """, (booking_id,)).fetchone()
-    conn.close()
+    if booking is None:
+        return render(
+            request,
+            "bookings/booking_detail.html",
+            {"booking": None},
+            status=404,
+        )
 
-    context = {
-        "booking": booking
-    }
-
-    # Если бронирование не найдено, возвращаем статус 404
     return render(
         request,
         "bookings/booking_detail.html",
-        context,
-        status=404 if booking is None else 200
+        {"booking": booking},
     )

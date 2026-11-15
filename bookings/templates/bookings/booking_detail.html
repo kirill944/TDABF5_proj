@@ -9,8 +9,8 @@
     <div class="card">
         <div class="card-body">
             <h1 class="card-title">Бронирование №{{ booking.id }}</h1>
-            <p class="card-text"><strong>Инструмент:</strong> {{ booking.instrument_name }}</p>
-            <p class="card-text"><strong>Пользователь:</strong> {{ booking.user_name }}</p>
+            <p class="card-text"><strong>Инструмент:</strong> {{ booking.instrument.name }}</p>
+            <p class="card-text"><strong>Пользователь:</strong> {{ booking.user.name }} ({{ booking.user.email }})</p>
             <p class="card-text"><strong>Дата:</strong> {{ booking.booking_date }}</p>
             <p class="card-text">
                 <strong>Статус:</strong>

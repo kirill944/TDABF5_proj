@@ -4,8 +4,14 @@
 
 {% block content %}
 <h1>Инструменты</h1>
+<form method="get" class="mb-3">
+    <input type="text" name="q" value="{{ query }}" placeholder="Поиск по названию">
+    <input type="number" name="max_price" placeholder="Макс. цена">
+    <button type="submit" class="btn btn-primary">Найти</button>
+</form>
 <p>Всего инструментов: {{ instruments|length }}</p>
 <div class="row">
+
     {% for ins in instruments %}
         {% include "instruments/includes/instrument_card.html" %}
     {% empty %}

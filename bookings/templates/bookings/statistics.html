@@ -1,6 +1,9 @@
 {% extends "base.html" %}
+{% block title %}Статистика — Instrument Booking{% endblock %}
 {% block content %}
 <h1>Статистика бронирований</h1>
+
+<h2>По инструментам</h2>
 <ul class="list-group">
 {% for item in statistics %}
     <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -10,5 +13,16 @@
 {% empty %}
     <p>Данные отсутствуют.</p>
 {% endfor %}
+</ul>
+
+<h2 class="mt-4">Сводная статистика</h2>
+<ul>
+    <li>Всего бронирований: {{ totals.total_bookings }}</li>
+    <li>Активных: {{ totals.active_bookings }}</li>
+    <li>Средняя цена инструмента: {{ totals.avg_instrument_price|floatformat:2 }} руб.</li>
+    <li>Общая стоимость активных бронирований: {{ totals.total_revenue }} руб.</li>
+    <li>Первое бронирование: {{ totals.first_booking }}</li>
+    <li>Последнее бронирование: {{ totals.last_booking }}</li>
+    <li>Активных будущих (с 2026-01-01): {{ active_future }}</li>
 </ul>
 {% endblock %}
