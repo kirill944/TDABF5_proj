@@ -1,4 +1,6 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, redirect, render
+
+from .forms import InstrumentForm
 from .models import Instrument
 
 
@@ -69,5 +71,41 @@ def available_instruments(request):
             "instruments": instruments_list,
             "booking_date": booking_date,
             "names_only": names_only,
+        },
+    )
+
+
+def instrument_create(request):
+    """Создание инструмента с загрузкой изображения."""
+    if request.method == "POST":
+        # Передаём форме обычные данные и загруженные файлы.
+        form = InstrumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect("instruments:instruments")
+    else:
+        form = InstrumentForm()
+
+    return render(request, "instruments/instrument_form.html", {"form": form})
+
+
+def instrument_update(request, instrument_id):
+    """Редактирование инструмента, в том числе замена изображения."""
+    instrument = get_object_or_404(Instrument, pk=instrument_id)
+
+    if request.method == "POST":
+        form = InstrumentForm(request.POST, request.FILES, instance=instrument)
+        if form.is_valid():
+            form.save()
+            return redirect("instruments:instruments")
+    else:
+        form = InstrumentForm(instance=instrument)
+
+    return render(
+        request,
+        "instruments/instrument_form.html",
+        {
+            "form": form,
+            "instrument": instrument,
         },
     )

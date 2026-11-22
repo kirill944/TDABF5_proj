@@ -4,6 +4,13 @@ from django.db import models
 class Instrument(models.Model):
     name = models.CharField(max_length=200)
     price = models.IntegerField()
+    # Храним путь к изображению инструмента.
+    image = models.ImageField(
+        upload_to="instruments/",
+        blank=True,
+        null=True,
+        verbose_name="Изображение",
+    )
 
     class Meta:
         verbose_name = "Инструмент"

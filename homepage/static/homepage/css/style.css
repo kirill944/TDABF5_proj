@@ -18,3 +18,39 @@
     text-decoration: line-through;
     opacity: 0.7;
 }
+
+/* Общая область фильтрации бронирований */
+.booking-filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 16px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+/* Контейнер отдельного поля формы */
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 180px;
+}
+
+/* Оформление сообщений об ошибках в отдельных полях формы */
+.form-error {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 4px;
+}
+
+/* Дополнительное выделение поля, в котором обнаружена ошибка */
+.filter-field .errorlist {
+    color: #dc3545;
+    list-style: none;
+    padding-left: 0;
+    margin-top: 4px;
+}

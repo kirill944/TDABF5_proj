@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if instrument %}Редактирование инструмента{% else %}Создание инструмента{% endif %} — Instrument Booking
+{% endblock %}
+
+{% block content %}
+{% if instrument %}
+    <h1>Редактирование инструмента</h1>
+{% else %}
+    <h1>Создание инструмента</h1>
+{% endif %}
+
+{# enctype обязателен, иначе браузер не передаст файл. #}
+<form method="post" enctype="multipart/form-data" class="col-md-6">
+    {% csrf_token %}
+
+    {% for error in form.non_field_errors %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endfor %}
+
+    {% for field in form %}
+        <div class="mb-3">
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.help_text %}
+                <div class="form-text">{{ field.help_text }}</div>
+            {% endif %}
+            {% for error in field.errors %}
+                <div class="form-error">{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+    {% if instrument %}
+        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+    {% else %}
+        <button type="submit" class="btn btn-primary">Создать инструмент</button>
+    {% endif %}
+    <a href="{% url 'instruments:instruments' %}" class="btn btn-outline-secondary">Отмена</a>
+</form>
+{% endblock %}

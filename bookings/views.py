@@ -1,57 +1,164 @@
-from django.shortcuts import render
-from django.db.models import Count, Q, Avg, Sum, Min, Max
 from django.core.paginator import Paginator
+from django.db.models import Avg, Count, Max, Min, Q, Sum
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.http import require_POST
 
-from .models import Booking, User
 from instruments.models import Instrument
+
+from .forms import BookingFilterForm, BookingForm
+from .models import Booking, User
 
 
 def bookings(request):
-    bookings_qs = Booking.objects.select_related("instrument", "user").filter(is_cancelled=False)
+    # Передаём GET-параметры в форму: Django проверяет их и сохраняет
+    # введённые значения при повторном отображении страницы.
+    form = BookingFilterForm(request.GET or None)
+    form_valid = form.is_bound and form.is_valid()
 
-    # Собираем условия в объект Q
-    query = Q()
+    # Значения фильтров по умолчанию. Если форма не прошла проверку,
+    # фильтрация по параметрам не выполняется.
+    booking_date = None
+    instrument_id = None
+    user_id = None
+    sort = "date"
 
-    instrument_id = request.GET.get("instrument")
-    if instrument_id and instrument_id.isdigit():
-        query &= Q(instrument_id=int(instrument_id))
+    if form_valid:
+        booking_date = form.cleaned_data.get("date")
+        selected_instrument = form.cleaned_data.get("instrument")
+        selected_user = form.cleaned_data.get("user")
+        instrument_id = selected_instrument.pk if selected_instrument else None
+        user_id = selected_user.pk if selected_user else None
+        sort = form.cleaned_data.get("sort") or "date"
 
-    user_id = request.GET.get("user")
-    if user_id and user_id.isdigit():
-        query &= Q(user_id=int(user_id))
+    error = None
+    if form.is_bound and not form_valid:
+        error = "Проверьте введённые значения фильтров."
 
-    booking_date = request.GET.get("date")
+    # Исходная выборка формируется пользовательским QuerySet:
+    # в список попадают только активные бронирования.
+    bookings_data = Booking.objects.active().select_related("instrument", "user")
+
     if booking_date:
-        query &= Q(booking_date=booking_date)
+        bookings_data = bookings_data.filter(booking_date=booking_date)
+    if instrument_id:
+        bookings_data = bookings_data.filter(instrument_id=instrument_id)
+    if user_id:
+        bookings_data = bookings_data.filter(user_id=user_id)
 
-    # Применяем все собранные условия за один раз
-    if query:
-        bookings_qs = bookings_qs.filter(query)
+    # Словарь разрешённых полей сортировки: произвольный GET-параметр
+    # в order_by() не подставляется.
+    sort_fields = {
+        "date": "booking_date",
+        "instrument": "instrument__name",
+        "user": "user__name",
+    }
+    sort_field = sort_fields.get(sort, "booking_date")
+    bookings_data = bookings_data.order_by(sort_field, "id")
 
-    # Сортировка
-    bookings_qs = bookings_qs.order_by("booking_date")
-
-    # Пагинация
-    paginator = Paginator(bookings_qs, per_page=10)
+    # Пагинация.
+    paginator = Paginator(bookings_data, per_page=10)
     page_obj = paginator.get_page(request.GET.get("page"))
+
+    context = {
+        "bookings": page_obj,
+        "page_obj": page_obj,
+        "form": form,
+        "booking_date": booking_date,
+        "selected_instrument": instrument_id,
+        "selected_user": user_id,
+        "instruments": Instrument.objects.order_by("name"),
+        "users": User.objects.order_by("name"),
+        "sort": sort,
+        "error": error,
+    }
+
+    return render(request, "bookings/booking_list.html", context)
+
+
+def booking_create(request):
+    """Создание нового бронирования через ModelForm."""
+    if request.method == "POST":
+        form = BookingForm(request.POST)
+        if form.is_valid():
+            instrument = form.cleaned_data["instrument"]
+            booking_date = form.cleaned_data["booking_date"]
+
+            # Проверяем, не занят ли инструмент на выбранную дату.
+            # Отменённые бронирования не блокируют инструмент, потому что
+            # не входят в Booking.objects.active().
+            is_booked = (
+                Booking.objects.active()
+                .filter(instrument=instrument, booking_date=booking_date)
+                .exists()
+            )
+
+            if is_booked:
+                form.add_error(
+                    None,
+                    "Выбранный инструмент уже забронирован на эту дату.",
+                )
+            else:
+                form.save()
+                return redirect("bookings:bookings")
+    else:
+        # При GET-запросе показываем пустую форму с текущей датой.
+        form = BookingForm(initial={"booking_date": timezone.localdate()})
+
+    return render(request, "bookings/booking_form.html", {"form": form})
+
+
+def booking_update(request, booking_id):
+    """Редактирование существующего бронирования."""
+    # Отменённые бронирования изменить нельзя — они не попадают в выборку.
+    booking = get_object_or_404(Booking.objects.active(), pk=booking_id)
+
+    if request.method == "POST":
+        form = BookingForm(request.POST, instance=booking)
+        if form.is_valid():
+            instrument = form.cleaned_data["instrument"]
+            booking_date = form.cleaned_data["booking_date"]
+
+            # Текущее бронирование исключается из проверки занятости,
+            # иначе оно конфликтовало бы само с собой.
+            is_booked = (
+                Booking.objects.active()
+                .filter(instrument=instrument, booking_date=booking_date)
+                .exclude(pk=booking.pk)
+                .exists()
+            )
+
+            if is_booked:
+                form.add_error(
+                    None,
+                    "Выбранный инструмент уже забронирован на эту дату.",
+                )
+            else:
+                form.save()
+                return redirect("bookings:bookings")
+    else:
+        form = BookingForm(instance=booking)
 
     return render(
         request,
-        "bookings/booking_list.html",
+        "bookings/booking_form.html",
         {
-            "bookings": page_obj,
-            "page_obj": page_obj,
-            "instruments": Instrument.objects.order_by("name"),
-            "users": User.objects.order_by("name"),
-            "selected_instrument": instrument_id or "",
-            "selected_user": user_id or "",
-            "selected_date": booking_date or "",  # <-- изменили название переменной
+            "form": form,
+            "booking": booking,
         },
     )
 
 
+@require_POST
+def booking_cancel(request, booking_id):
+    """Отмена бронирования с изменением статуса записи."""
+    # Ищем только активное бронирование: повторная отмена вернёт 404.
+    booking = get_object_or_404(Booking.objects.active(), pk=booking_id)
+    booking.cancel()
+    return redirect("bookings:bookings")
+
+
 def statistics(request):
-    # ... без изменений, как у вас было ...
     stats = (
         Booking.objects
         .values("instrument__name")

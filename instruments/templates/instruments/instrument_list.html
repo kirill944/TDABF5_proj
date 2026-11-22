@@ -4,6 +4,9 @@
 
 {% block content %}
 <h1>Инструменты</h1>
+<a href="{% url 'instruments:instrument_create' %}" class="btn btn-primary mb-3">
+    Добавить инструмент
+</a>
 <form method="get" class="mb-3">
     <input type="text" name="q" value="{{ query }}" placeholder="Поиск по названию">
     <input type="number" name="max_price" value="{{ max_price }}" placeholder="Макс. цена">

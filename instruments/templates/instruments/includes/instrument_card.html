@@ -1,5 +1,8 @@
 <div class="col-md-4 mb-3">
     <div class="card instrument-card h-100">
+        {% if ins.image %}
+            <img src="{{ ins.image.url }}" class="card-img-top" alt="{{ ins.name }}" style="height: 180px; object-fit: cover;">
+        {% endif %}
         <div class="card-body">
             <h5 class="card-title">{{ ins.name|default:"Без названия" }}</h5>
             <p class="card-text">Цена: {{ ins.price }} руб.</p>

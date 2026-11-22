@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if booking %}Редактирование бронирования{% else %}Создание бронирования{% endif %} — Instrument Booking
+{% endblock %}
+
+{% block content %}
+{% if booking %}
+    <h1>Редактирование бронирования</h1>
+{% else %}
+    <h1>Создание бронирования</h1>
+{% endif %}
+
+{# Форма отправляет данные представлению методом POST. #}
+<form method="post" class="col-md-6">
+    {# Токен защищает POST-запрос от CSRF-атак. #}
+    {% csrf_token %}
+
+    {# Общие ошибки формы, не связанные с конкретным полем. #}
+    {% for error in form.non_field_errors %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endfor %}
+
+    {# Перебираем все поля формы. #}
+    {% for field in form %}
+        <div class="mb-3">
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.help_text %}
+                <div class="form-text">{{ field.help_text }}</div>
+            {% endif %}
+            {% for error in field.errors %}
+                <div class="form-error">{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+    {% if booking %}
+        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+    {% else %}
+        <button type="submit" class="btn btn-primary">Создать бронирование</button>
+    {% endif %}
+    <a href="{% url 'bookings:bookings' %}" class="btn btn-outline-secondary">Отмена</a>
+</form>
+{% endblock %}

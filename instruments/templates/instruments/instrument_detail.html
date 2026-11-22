@@ -9,6 +9,13 @@
     <div class="card">
         <div class="card-body">
             <h2 class="card-title">{{ instrument.name }}</h2>
+            {% if instrument.image %}
+                <img src="{{ instrument.image.url }}"
+                     alt="{{ instrument.name }}"
+                     class="img-fluid mb-3" style="max-height: 320px;">
+            {% else %}
+                <p class="text-muted">Изображение не загружено.</p>
+            {% endif %}
             <p class="card-text"><strong>ID:</strong> {{ instrument.id }}</p>
             <p class="card-text"><strong>Цена:</strong> {{ instrument.price }} руб.</p>
             <p class="card-text">
@@ -19,6 +26,8 @@
                     <span class="badge bg-danger">Занят (есть активные брони)</span>
                 {% endif %}
             </p>
+            <a href="{% url 'instruments:instrument_update' instrument.id %}"
+               class="btn btn-warning mt-3">Редактировать</a>
             <a href="{% url 'instruments:instruments' %}" class="btn btn-outline-secondary mt-3">← Назад к списку</a>
         </div>
     </div>

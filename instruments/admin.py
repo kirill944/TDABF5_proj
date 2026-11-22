@@ -19,6 +19,8 @@ class InstrumentAdmin(admin.ModelAdmin):
     list_filter = ("price",)
     ordering = ("name",)
     inlines = [InstrumentBookingInline]
+    # Поле изображения доступно для загрузки и замены из админ-панели.
+    fields = ("name", "price", "image")
 
     def get_queryset(self, request):
         return (

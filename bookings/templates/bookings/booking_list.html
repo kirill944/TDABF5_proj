@@ -3,55 +3,88 @@
 {% block title %}Активные бронирования — Instrument Booking{% endblock %}
 
 {% block content %}
-<h1>Активные бронирования</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Активные бронирования</h1>
+    <a href="{% url 'bookings:booking_create' %}" class="btn btn-primary">
+        Создать бронирование
+    </a>
+</div>
 
-<!-- Форма фильтрации -->
-<form method="get" class="mb-4 row g-2">
-    <div class="col-auto">
-        <select name="instrument" class="form-select">
-            <option value="">Все инструменты</option>
-            {% for ins in instruments %}
-                <option value="{{ ins.id }}" {% if selected_instrument == ins.id|stringformat:"s" %}selected{% endif %}>
-                    {{ ins.name }}
-                </option>
-            {% endfor %}
-        </select>
+{# Общее сообщение, если параметры фильтрации некорректны. #}
+{% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+{# Форма фильтрации отправляет параметры методом GET. #}
+<form method="get" class="booking-filter-form mb-4">
+    <div class="filter-field">
+        {{ form.date.label_tag }}
+        {{ form.date }}
+        {% for error in form.date.errors %}
+            <div class="form-error">{{ error }}</div>
+        {% endfor %}
     </div>
-    <div class="col-auto">
-        <select name="user" class="form-select">
-            <option value="">Все пользователи</option>
-            {% for u in users %}
-                <option value="{{ u.id }}" {% if selected_user == u.id|stringformat:"s" %}selected{% endif %}>
-                    {{ u.name }}
-                </option>
-            {% endfor %}
-        </select>
+
+    <div class="filter-field">
+        {{ form.instrument.label_tag }}
+        {{ form.instrument }}
+        {% for error in form.instrument.errors %}
+            <div class="form-error">{{ error }}</div>
+        {% endfor %}
     </div>
-    <div class="col-auto">
-        <!-- Один инпут для точной даты -->
-        <input type="date" name="date" value="{{ selected_date }}" class="form-control" title="Дата бронирования">
+
+    <div class="filter-field">
+        {{ form.user.label_tag }}
+        {{ form.user }}
+        {% for error in form.user.errors %}
+            <div class="form-error">{{ error }}</div>
+        {% endfor %}
     </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Фильтр</button>
-        <a href="{% url 'bookings:bookings' %}" class="btn btn-outline-secondary">Сбросить</a>
+
+    <div class="filter-field">
+        {{ form.sort.label_tag }}
+        {{ form.sort }}
+        {% for error in form.sort.errors %}
+            <div class="form-error">{{ error }}</div>
+        {% endfor %}
+    </div>
+
+    <div class="filter-field">
+        <button type="submit" class="btn btn-primary">Применить фильтры</button>
+        <a href="{% url 'bookings:bookings' %}" class="btn btn-outline-secondary mt-2">
+            Сбросить фильтры
+        </a>
     </div>
 </form>
 
-<!-- Список бронирований -->
 {% for b in bookings %}
     <div class="card mb-2">
         <div class="card-body">
-            <h5>{{ b.instrument.name }}</h5>
-            <p>Дата: {{ b.booking_date }}</p>
-            <p>Пользователь: {{ b.user.name }}</p>
-            <a href="{% url 'bookings:booking_detail' b.id %}" class="btn btn-sm btn-outline-primary">Подробнее</a>
+            <h5 class="card-title">
+                {{ b.instrument.name }}
+                {% include "bookings/includes/booking_status.html" with booking=b %}
+            </h5>
+            <p class="card-text mb-1"><strong>Дата:</strong> {{ b.booking_date }}</p>
+            <p class="card-text"><strong>Пользователь:</strong> {{ b.user.name }}</p>
+
+            <a href="{% url 'bookings:booking_detail' b.id %}"
+               class="btn btn-sm btn-outline-primary">Подробнее</a>
+            <a href="{% url 'bookings:booking_update' b.id %}"
+               class="btn btn-sm btn-warning">Редактировать</a>
+
+            {# Отмена выполняется POST-запросом с CSRF-токеном. #}
+            <form method="post"
+                  action="{% url 'bookings:booking_cancel' b.id %}"
+                  class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger">Отменить</button>
+            </form>
         </div>
     </div>
 {% empty %}
     <p>Активных бронирований нет (или они не подходят под фильтры).</p>
 {% endfor %}
 
-<!-- Пагинация -->
 {% if page_obj.has_other_pages %}
 <nav class="mt-3">
     <ul class="pagination">
